@@ -1,4 +1,0 @@
-Username: ememroze97
-Password: VYDwo9X2CI2d6NX0
-
-mongodb+srv://ememroze97:<password>@cluster0.rax0mvf.mongodb.net/?retryWrites=true&w=majority

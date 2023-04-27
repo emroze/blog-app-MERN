@@ -33,8 +33,15 @@ export default function Header() {
       <nav className="flex flex-row items-center gap-3 ">
         {username && (
           <>
-            <Link className="text-gray-900 hover:text-blue-600" to="/create">Create New Post</Link>
-            <button className="text-gray-900 hover:text-blue-600" onClick={logout}>Logout</button>
+            <Link className="text-gray-900 hover:text-blue-600" to="/create">
+              Create New Post
+            </Link>
+            <button
+              className="text-gray-900 hover:text-blue-600"
+              onClick={logout}
+            >
+              Logout
+            </button>
           </>
         )}
         {!username && (

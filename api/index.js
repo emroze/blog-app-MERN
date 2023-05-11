@@ -11,18 +11,16 @@ const cookieParser = require("cookie-parser");
 const multer = require("multer");
 const uploadMiddleware = multer({ dest: "uploads/" });
 const fs = require("fs");
-const dotenv = require('dotenv');
-
+const dotenv = require("dotenv");
 
 dotenv.config();
 const salt = bcrypt.genSaltSync(10);
-const secret = process.env.JWT_SECRET //"huisfdkjnf2243543@dklms"; //JWT secret 
+const secret = process.env.JWT_SECRET; //"huisfdkjnf2243543@dklms"; //JWT secret
 
 app.use(cors({ credentials: true, origin: process.env.CLIENT_URL }));
 app.use(express.json());
 app.use(cookieParser());
-app.use('/uploads',express.static(__dirname + '/uploads'))
-
+app.use("/uploads", express.static(__dirname + "/uploads"));
 
 mongoose.connect(
   process.env.MONGO_URL
@@ -106,17 +104,63 @@ app.post("/post", uploadMiddleware.single("file"), async (req, res) => {
 
       res.json(postedDoc);
     });
+  } else {
+    res.status(401).json("failed");
   }
-  else {
-    res.status(401).json("failed")
+});
+
+app.put("/post", uploadMiddleware.single("file"), async (req, res) => {
+  let newPath = null;
+  if (req.file) {
+    const { originalname, path } = req.file;
+    const parts = originalname.split(".");
+    const extension = parts[parts.length - 1];
+    newPath = path + "." + extension;
+    fs.renameSync(path, newPath);
+
+    const { token } = req.cookies;
+    if (token) {
+      jwt.verify(token, secret, {}, async (err, info) => {
+        if (err) {
+          fs.unlink(newPath, (err) => {
+            if (err) throw err;
+          });
+          console.log("file delelted");
+          throw err;
+        }
+        const {id,title, summary, content } = req.body;
+        const postDoc = await Post.findById(id);
+        const isAuthor = JSON.stringify(postDoc.author) === JSON.stringify(info.id);
+        if(!isAuthor){
+          return res.status(400).json("Invalid Author");
+        }
+
+        await postDoc.updateOne({
+          title,
+          summary,
+          content,
+          cover: newPath ? newPath : postDoc.cover,
+        })
+
+        res.json(postDoc);
+
+      });
+    }
   }
 });
 
 app.get("/post", async (req, res) => {
   const posts = await Post.find()
-  .populate("author", ["username"])
-  .sort({createdAt: -1})
-  .limit(20);
+    .populate("author", ["username"])
+    .sort({ createdAt: -1 })
+    .limit(20);
   res.json(posts);
 });
+
+app.get("/post/:id", async (req, res) => {
+  const { id } = req.params;
+  const postDoc = await Post.findById(id).populate("author", ["username"]);
+  res.json(postDoc);
+});
+
 app.listen(port);

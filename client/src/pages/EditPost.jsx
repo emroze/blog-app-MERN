@@ -1,44 +1,56 @@
-import { useState } from "react";
-import ReactQuill from "react-quill";
+import { useState, useEffect } from "react";
 import "react-quill/dist/quill.snow.css";
-import { Navigate } from "react-router-dom";
+import { Navigate, useParams } from "react-router-dom";
 import Editor from "../Editor";
 
-
-export default function CreatePost() {
+export default function EditPost() {
+  const { id } = useParams();
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
   const [content, setContent] = useState("");
   const [files, setFiles] = useState("");
   const [redirect, setRedirect] = useState(false);
-  async function createNewPost(ev) {
+
+  useEffect(() => {
+    fetch('http://localhost:4000/post/'+id)
+    .then(response => {
+        response.json().then(postInfo => {
+            setTitle(postInfo.title);
+            setContent(postInfo.content);
+            setSummary(postInfo.summary);
+        })
+    })
+  }, []);
+
+  async function updatePost(ev) {
     ev.preventDefault();
 
     const data = new FormData();
     data.set("title", title);
     data.set("summary", summary);
     data.set("content", content);
-    data.set("file", files[0]);
-
-    const response = await fetch("http://localhost:4000/post", {
-      method: "POST",
-      body: data,
-      credentials: 'include',
-    });
-
-    if (response.ok) {
-      setRedirect(true);
+    data.set('id',id);
+    if (files?.[0]){
+        data.set("file", files?.[0]);
     }
-    else{
-      alert("Login First")
+
+    const response = await fetch('http://localhost:4000/post',{
+        method: 'PUT',
+        body: data,
+        credentials: "include",
+    })
+    if(response.ok){
+        setRedirect(true);
     }
+
   }
+
   if (redirect) {
-    return <Navigate to={"/"} />;
+    return <Navigate to={"/post/"+id} />;
   }
 
   return (
-    <form className="flex flex-col gap-3 " onSubmit={createNewPost}>
+    <form className="flex flex-col gap-3 " onSubmit={updatePost}>
       <input
         className="border border-gray-300 rounded-lg p-1"
         type="title"
@@ -58,19 +70,12 @@ export default function CreatePost() {
         type="file"
         onChange={(ev) => setFiles(ev.target.files)}
       />
-      {/* <ReactQuill
-        value={content}
-        onChange={(newValue) => setContent(newValue)}
-        theme="snow"
-        modules={modules}
-        formats={formats}
-      /> */}
-      <Editor value={content} onChange={setContent}/>
+      <Editor onChange={setContent} value={content} />
       <button
         type="submit"
         className="bg-gray-500 hover:bg-gray-700 text-white font-bold p-0.5 rounded"
       >
-        Create Post
+        Update Post
       </button>
     </form>
   );

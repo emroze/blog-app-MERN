@@ -18,6 +18,7 @@ const salt = bcrypt.genSaltSync(10);
 const secret = process.env.JWT_SECRET; //"huisfdkjnf2243543@dklms"; //JWT secret
 
 app.use(cors({ credentials: true, origin: process.env.CLIENT_URL }));
+
 app.use(express.json());
 app.use(cookieParser());
 app.use("/uploads", express.static(__dirname + "/uploads"));
